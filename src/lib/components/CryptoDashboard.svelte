@@ -1,5 +1,13 @@
 <script lang="ts">
   import { onDestroy } from 'svelte'
+  import { base } from '$app/paths'
+
+  // Props for callback when favorites change
+  interface Props {
+    onFavoriteChange?: () => void
+  }
+
+  let { onFavoriteChange }: Props = $props()
 
   interface Coin {
     id: string
@@ -140,6 +148,7 @@
   let countdown = $state(0)
   let countdownInterval: ReturnType<typeof setInterval> | null = null
   let refreshIntervalId: ReturnType<typeof setInterval> | null = null
+  let favoriteIds = $state<Set<string>>(new Set())
 
   // Toast functions
   function addToast(toast: { label: string; code: string; detail: string; type?: 'error' | 'info' }) {
@@ -188,8 +197,67 @@
     }
   }
 
+  // Fetch favorite IDs
+  async function loadFavoriteIds() {
+    try {
+      const res = await fetch(`${base}/api/favorites?user_id=public`)
+      if (res.ok) {
+        const data = await res.json()
+        favoriteIds = new Set((data.favorites || []).map((f: { coin_id: string }) => f.coin_id))
+      }
+    } catch {
+      // Silently fail - favorites are optional
+    }
+  }
+
+  // Toggle favorite
+  async function toggleFavorite(coin: Coin, event: MouseEvent) {
+    event.stopPropagation()
+
+    const isFavorite = favoriteIds.has(coin.id)
+
+    try {
+      if (isFavorite) {
+        const res = await fetch(`${base}/api/favorites?user_id=public&coin_id=${coin.id}`, {
+          method: 'DELETE'
+        })
+        if (res.ok) {
+          const newSet = new Set(favoriteIds)
+          newSet.delete(coin.id)
+          favoriteIds = newSet
+          onFavoriteChange?.()
+        }
+      } else {
+        const res = await fetch(`${base}/api/favorites`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            user_id: 'public',
+            coin_id: coin.id,
+            coin_name: coin.name,
+            coin_symbol: coin.symbol,
+            coin_image: coin.image
+          })
+        })
+        if (res.ok) {
+          const newSet = new Set(favoriteIds)
+          newSet.add(coin.id)
+          favoriteIds = newSet
+          onFavoriteChange?.()
+        }
+      }
+    } catch {
+      addToast({
+        label: 'Favorites Error',
+        code: 'ERR_FAVORITES',
+        detail: 'Could not update favorites. Please try again.'
+      })
+    }
+  }
+
   // Initial load
   loadCoins()
+  loadFavoriteIds()
 
   // Watch currency changes
   $effect(() => {
@@ -428,6 +496,7 @@
       <table class="w-full text-sm">
         <thead>
           <tr class="bg-gray-50 dark:bg-gray-800 text-gray-600 dark:text-gray-300 text-left">
+            <th class="px-2 py-3 font-medium w-10"></th>
             <th
               class="px-4 py-3 font-medium cursor-pointer hover:text-gray-900 dark:hover:text-white whitespace-nowrap"
               onclick={() => handleSort('market_cap_rank')}
@@ -467,7 +536,7 @@
           {#if isLoading && coins.length === 0}
             {#each Array(10) as _, i}
               <tr class="border-t border-gray-100 dark:border-gray-800 animate-pulse">
-                <td class="px-4 py-4" colspan="8">
+                <td class="px-4 py-4" colspan="9">
                   <div class="h-4 bg-gray-200 dark:bg-gray-700 rounded w-full"></div>
                 </td>
               </tr>
@@ -480,6 +549,17 @@
                   ? 'bg-indigo-50 dark:bg-indigo-900/20'
                   : 'hover:bg-gray-50 dark:hover:bg-gray-800/50'}"
               >
+                <td class="px-2 py-3 text-center">
+                  <button
+                    onclick={(e) => toggleFavorite(coin, e)}
+                    class="p-1 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors {favoriteIds.has(coin.id) ? 'text-yellow-500' : 'text-gray-300 dark:text-gray-600 hover:text-yellow-400'}"
+                    aria-label={favoriteIds.has(coin.id) ? 'Remove from favorites' : 'Add to favorites'}
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-5 h-5">
+                      <path fill-rule="evenodd" d="M10.788 3.21c.448-1.077 1.976-1.077 2.424 0l2.082 5.006 5.404.434c1.164.093 1.636 1.545.749 2.305l-4.117 3.527 1.257 5.273c.271 1.136-.964 2.033-1.96 1.425L12 18.354 7.373 21.18c-.996.608-2.231-.29-1.96-1.425l1.257-5.273-4.117-3.527c-.887-.76-.415-2.212.749-2.305l5.404-.434 2.082-5.005Z" clip-rule="evenodd" />
+                    </svg>
+                  </button>
+                </td>
                 <td class="px-4 py-3 text-gray-500 dark:text-gray-400 font-mono">
                   {coin.market_cap_rank}
                 </td>
