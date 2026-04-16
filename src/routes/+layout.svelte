@@ -1,5 +1,9 @@
 <script>
   import '../app.css'
+  import HealthcheckToolbar from '$lib/components/HealthcheckToolbar.svelte'
 </script>
 
-<slot />
+<div class="pb-12">
+  <slot />
+</div>
+<HealthcheckToolbar />
