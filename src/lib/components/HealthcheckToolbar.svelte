@@ -37,7 +37,7 @@
       description: 'SQLite database for persistent storage',
       icon: '🗄️',
       details: {
-        'Database Name': 'project-updates-db',
+        'Database Name': 'db',
         'Migrations Dir': 'drizzle',
       },
     },
@@ -66,11 +66,11 @@
     r2: {
       label: 'R2 Storage',
       type: 'R2',
-      binding: 'WEBFLOW_CLOUD_MEDIA',
+      binding: 'MEDIA',
       description: 'Object storage for files and media',
       icon: '📦',
       details: {
-        'Bucket Name': 'fake',
+        'Bucket Name': 'media',
         'Purpose': 'Media storage',
       },
     },

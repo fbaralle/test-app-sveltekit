@@ -7,7 +7,7 @@ declare global {
         DB: D1Database;
         SESSIONS: KVNamespace;
         FLAGS: KVNamespace;
-        WEBFLOW_CLOUD_MEDIA: R2Bucket;
+        MEDIA: R2Bucket;
       };
     }
   }
