@@ -88,7 +88,7 @@
 
   async function fetchHealth() {
     try {
-      const res = await fetch(`${basePath}/api/healthcheck`);
+      const res = await fetch(`${basePath}/api/binding-status`);
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       health = (await res.json()) as HealthcheckResponse;
       error = null;
