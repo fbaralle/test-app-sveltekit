@@ -1,6 +1,8 @@
 <script lang="ts">
-  import { base } from '$app/paths'
+  import { PUBLIC_API_MOUNT_PATH } from '$env/static/public'
   import { onMount } from 'svelte'
+
+  const basePath = PUBLIC_API_MOUNT_PATH || ''
 
   interface Props {
     compact?: boolean
@@ -19,7 +21,7 @@
     error = null
 
     try {
-      const res = await fetch(`${base}/api/pageviews`)
+      const res = await fetch(`${basePath}/api/pageviews`)
       if (!res.ok) {
         const data = await res.json()
         throw new Error(data.error || `Failed to fetch: ${res.status}`)
@@ -39,7 +41,7 @@
       // Get or create visitor ID from localStorage
       let storedVisitorId = localStorage.getItem('visitorId')
 
-      const res = await fetch(`${base}/api/pageviews`, {
+      const res = await fetch(`${basePath}/api/pageviews`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ visitorId: storedVisitorId }),

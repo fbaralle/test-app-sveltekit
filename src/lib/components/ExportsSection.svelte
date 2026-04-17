@@ -1,6 +1,8 @@
 <script lang="ts">
-  import { base } from '$app/paths'
+  import { PUBLIC_API_MOUNT_PATH } from '$env/static/public'
   import { onMount } from 'svelte'
+
+  const basePath = PUBLIC_API_MOUNT_PATH || ''
 
   interface Props {
     compact?: boolean
@@ -24,7 +26,7 @@
     error = null
 
     try {
-      const res = await fetch(`${base}/api/export`)
+      const res = await fetch(`${basePath}/api/export`)
       if (!res.ok) {
         const data = await res.json()
         throw new Error(data.error || `Failed to fetch: ${res.status}`)
@@ -43,7 +45,7 @@
     error = null
 
     try {
-      const res = await fetch(`${base}/api/export`, {
+      const res = await fetch(`${basePath}/api/export`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

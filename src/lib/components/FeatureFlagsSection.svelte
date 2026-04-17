@@ -1,6 +1,8 @@
 <script lang="ts">
-  import { base } from '$app/paths'
+  import { PUBLIC_API_MOUNT_PATH } from '$env/static/public'
   import { onMount } from 'svelte'
+
+  const basePath = PUBLIC_API_MOUNT_PATH || ''
 
   interface Props {
     compact?: boolean
@@ -30,7 +32,7 @@
     error = null
 
     try {
-      const res = await fetch(`${base}/api/flags`)
+      const res = await fetch(`${basePath}/api/flags`)
       const data = await res.json()
 
       if (data.error && res.status >= 500) {
@@ -50,7 +52,7 @@
     const newValue = !flags[flag]
 
     try {
-      const res = await fetch(`${base}/api/flags`, {
+      const res = await fetch(`${basePath}/api/flags`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ flag, value: newValue }),

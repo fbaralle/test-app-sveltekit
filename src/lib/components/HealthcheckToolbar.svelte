@@ -1,5 +1,8 @@
 <script lang="ts">
+  import { PUBLIC_API_MOUNT_PATH } from '$env/static/public'
   import { onMount, onDestroy } from 'svelte';
+
+  const basePath = PUBLIC_API_MOUNT_PATH || ''
 
   interface ServiceStatus {
     status: 'ok' | 'error';
@@ -85,7 +88,7 @@
 
   async function fetchHealth() {
     try {
-      const res = await fetch('/api/healthcheck');
+      const res = await fetch(`${basePath}/api/healthcheck`);
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       health = (await res.json()) as HealthcheckResponse;
       error = null;
