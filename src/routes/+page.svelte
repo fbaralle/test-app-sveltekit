@@ -4,6 +4,7 @@
   import PageViewsSection from '$lib/components/PageViewsSection.svelte'
   import FeatureFlagsSection from '$lib/components/FeatureFlagsSection.svelte'
   import ExportsSection from '$lib/components/ExportsSection.svelte'
+  import EnvDebugSection from '$lib/components/EnvDebugSection.svelte'
 
   let favoritesSection: FavoritesSection | undefined = $state()
 
@@ -41,7 +42,7 @@
       <h2 class="text-xl font-bold text-gray-900 dark:text-white mb-4">
         Cloudflare Bindings Demo
       </h2>
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
         <!-- Page Views (KV: SESSIONS) -->
         <div class="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 shadow-sm overflow-hidden">
           <div class="px-4 py-2 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800">
@@ -70,6 +71,16 @@
             </h3>
           </div>
           <ExportsSection compact />
+        </div>
+
+        <!-- Env Debug -->
+        <div class="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 shadow-sm overflow-hidden">
+          <div class="px-4 py-2 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800">
+            <h3 class="text-sm font-semibold text-gray-700 dark:text-gray-300">
+              Env Debug <span class="text-xs font-normal text-gray-400">(Names Only)</span>
+            </h3>
+          </div>
+          <EnvDebugSection compact />
         </div>
       </div>
     </div>
