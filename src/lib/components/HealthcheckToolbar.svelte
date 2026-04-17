@@ -1,8 +1,8 @@
 <script lang="ts">
-  import { APP_PUBLIC_API_PATH } from '$env/static/public'
+  import { base } from '$app/paths'
   import { onMount, onDestroy } from 'svelte';
 
-  const basePath = APP_PUBLIC_API_PATH || ''
+  const basePath = base
 
   interface ServiceStatus {
     status: 'ok' | 'error';
