@@ -4,13 +4,21 @@ import type { RequestHandler } from "./$types";
 const CACHE_TTL = 60; // 1 minute cache
 
 export const GET: RequestHandler = async ({ platform, url }) => {
-  const env = platform!.env;
-  const key = url.searchParams.get("key") || "default";
-  const cacheKey = `cache:${key}`;
-
   try {
+    const kv = platform?.env?.SESSIONS;
+
+    if (!kv) {
+      return json(
+        { error: "SESSIONS KV binding not available" },
+        { status: 503 }
+      );
+    }
+
+    const key = url.searchParams.get("key") || "default";
+    const cacheKey = `cache:${key}`;
+
     // Try to get from KV cache
-    const cached = await env.SESSIONS.get(cacheKey);
+    const cached = await kv.get(cacheKey);
     if (cached) {
       return json({
         data: JSON.parse(cached),
@@ -27,7 +35,7 @@ export const GET: RequestHandler = async ({ platform, url }) => {
     };
 
     // Store in KV with TTL
-    await env.SESSIONS.put(cacheKey, JSON.stringify(freshData), {
+    await kv.put(cacheKey, JSON.stringify(freshData), {
       expirationTtl: CACHE_TTL,
     });
 

@@ -2,30 +2,31 @@ import { json } from "@sveltejs/kit";
 import type { RequestHandler } from "./$types";
 
 export const GET: RequestHandler = async ({ platform, url }) => {
-  const env = platform!.env;
-  const exportId = url.searchParams.get("id");
+  try {
+    const r2 = platform?.env?.MEDIA;
 
-  if (!exportId) {
-    // List recent exports
-    try {
-      const list = await env.WEBFLOW_CLOUD_MEDIA.list({ prefix: "exports/", limit: 10 });
+    if (!r2) {
+      return json(
+        { error: "MEDIA R2 binding not available", exports: [] },
+        { status: 503 }
+      );
+    }
+
+    const exportId = url.searchParams.get("id");
+
+    if (!exportId) {
+      // List recent exports
+      const list = await r2.list({ prefix: "exports/", limit: 10 });
       const exports = list.objects.map((obj) => ({
         key: obj.key,
         size: obj.size,
         uploaded: obj.uploaded.toISOString(),
       }));
       return json({ exports });
-    } catch (e) {
-      return json(
-        { error: e instanceof Error ? e.message : "R2 error" },
-        { status: 500 }
-      );
     }
-  }
 
-  // Get specific export
-  try {
-    const object = await env.WEBFLOW_CLOUD_MEDIA.get(`exports/${exportId}`);
+    // Get specific export
+    const object = await r2.get(`exports/${exportId}`);
     if (!object) {
       return json({ error: "Export not found" }, { status: 404 });
     }
@@ -48,9 +49,16 @@ export const GET: RequestHandler = async ({ platform, url }) => {
 };
 
 export const POST: RequestHandler = async ({ platform, request }) => {
-  const env = platform!.env;
-
   try {
+    const r2 = platform?.env?.MEDIA;
+
+    if (!r2) {
+      return json(
+        { error: "MEDIA R2 binding not available" },
+        { status: 503 }
+      );
+    }
+
     const body = (await request.json()) as Record<string, unknown>;
     const exportId = `export-${Date.now()}`;
     const exportData = {
@@ -59,7 +67,7 @@ export const POST: RequestHandler = async ({ platform, request }) => {
       data: body,
     };
 
-    await env.WEBFLOW_CLOUD_MEDIA.put(
+    await r2.put(
       `exports/${exportId}`,
       JSON.stringify(exportData),
       {

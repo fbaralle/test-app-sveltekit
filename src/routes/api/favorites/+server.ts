@@ -12,11 +12,19 @@ interface Favorite {
 }
 
 export const GET: RequestHandler = async ({ platform, url }) => {
-  const env = platform!.env;
-  const userId = url.searchParams.get("user_id") || "public";
-
   try {
-    const { results } = await env.DB.prepare(
+    const db = platform?.env?.DB;
+
+    if (!db) {
+      return json(
+        { error: "DB binding not available", favorites: [] },
+        { status: 503 }
+      );
+    }
+
+    const userId = url.searchParams.get("user_id") || "public";
+
+    const { results } = await db.prepare(
       "SELECT * FROM favorites WHERE user_id = ? ORDER BY created_at DESC"
     )
       .bind(userId)
@@ -32,9 +40,16 @@ export const GET: RequestHandler = async ({ platform, url }) => {
 };
 
 export const POST: RequestHandler = async ({ platform, request }) => {
-  const env = platform!.env;
-
   try {
+    const db = platform?.env?.DB;
+
+    if (!db) {
+      return json(
+        { error: "DB binding not available" },
+        { status: 503 }
+      );
+    }
+
     const body = (await request.json()) as {
       user_id?: string;
       coin_id?: string;
@@ -48,7 +63,7 @@ export const POST: RequestHandler = async ({ platform, request }) => {
       return json({ error: "coin_id is required" }, { status: 400 });
     }
 
-    await env.DB.prepare(
+    await db.prepare(
       "INSERT OR IGNORE INTO favorites (user_id, coin_id, coin_name, coin_symbol, coin_image, created_at) VALUES (?, ?, ?, ?, ?, ?)"
     )
       .bind(user_id, coin_id, coin_name || null, coin_symbol || null, coin_image || null, Date.now())
@@ -64,16 +79,24 @@ export const POST: RequestHandler = async ({ platform, request }) => {
 };
 
 export const DELETE: RequestHandler = async ({ platform, url }) => {
-  const env = platform!.env;
-  const userId = url.searchParams.get("user_id") || "public";
-  const coinId = url.searchParams.get("coin_id");
-
-  if (!coinId) {
-    return json({ error: "coin_id is required" }, { status: 400 });
-  }
-
   try {
-    await env.DB.prepare(
+    const db = platform?.env?.DB;
+
+    if (!db) {
+      return json(
+        { error: "DB binding not available" },
+        { status: 503 }
+      );
+    }
+
+    const userId = url.searchParams.get("user_id") || "public";
+    const coinId = url.searchParams.get("coin_id");
+
+    if (!coinId) {
+      return json({ error: "coin_id is required" }, { status: 400 });
+    }
+
+    await db.prepare(
       "DELETE FROM favorites WHERE user_id = ? AND coin_id = ?"
     )
       .bind(userId, coinId)

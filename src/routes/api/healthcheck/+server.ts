@@ -18,8 +18,15 @@ interface HealthcheckResponse {
   };
 }
 
-async function checkD1(db: D1Database): Promise<ServiceStatus> {
+async function checkD1(db: D1Database | undefined): Promise<ServiceStatus> {
   const start = performance.now();
+  if (!db) {
+    return {
+      status: "error",
+      latency: Math.round(performance.now() - start),
+      error: "DB binding not available",
+    };
+  }
   try {
     await db.prepare("SELECT 1").first();
     return { status: "ok", latency: Math.round(performance.now() - start) };
@@ -32,8 +39,15 @@ async function checkD1(db: D1Database): Promise<ServiceStatus> {
   }
 }
 
-async function checkKV(kv: KVNamespace): Promise<ServiceStatus> {
+async function checkKV(kv: KVNamespace | undefined): Promise<ServiceStatus> {
   const start = performance.now();
+  if (!kv) {
+    return {
+      status: "error",
+      latency: Math.round(performance.now() - start),
+      error: "KV binding not available",
+    };
+  }
   try {
     await kv.get("__healthcheck__");
     return { status: "ok", latency: Math.round(performance.now() - start) };
@@ -46,8 +60,15 @@ async function checkKV(kv: KVNamespace): Promise<ServiceStatus> {
   }
 }
 
-async function checkR2(r2: R2Bucket): Promise<ServiceStatus> {
+async function checkR2(r2: R2Bucket | undefined): Promise<ServiceStatus> {
   const start = performance.now();
+  if (!r2) {
+    return {
+      status: "error",
+      latency: Math.round(performance.now() - start),
+      error: "R2 binding not available",
+    };
+  }
   try {
     await r2.head("__healthcheck__");
     return { status: "ok", latency: Math.round(performance.now() - start) };
@@ -61,28 +82,45 @@ async function checkR2(r2: R2Bucket): Promise<ServiceStatus> {
 }
 
 export const GET: RequestHandler = async ({ platform }) => {
-  const env = platform!.env;
+  try {
+    const env = platform?.env;
 
-  const [d1, kv_sessions, kv_flags, r2] = await Promise.all([
-    checkD1(env.DB),
-    checkKV(env.SESSIONS),
-    checkKV(env.FLAGS),
-    checkR2(env.MEDIA),
-  ]);
+    const [d1, kv_sessions, kv_flags, r2] = await Promise.all([
+      checkD1(env?.DB),
+      checkKV(env?.SESSIONS),
+      checkKV(env?.FLAGS),
+      checkR2(env?.MEDIA),
+    ]);
 
-  const services = { d1, kv_sessions, kv_flags, r2 };
-  const errorCount = Object.values(services).filter(
-    (s) => s.status === "error"
-  ).length;
+    const services = { d1, kv_sessions, kv_flags, r2 };
+    const errorCount = Object.values(services).filter(
+      (s) => s.status === "error"
+    ).length;
 
-  const status: HealthcheckResponse["status"] =
-    errorCount === 0 ? "healthy" : errorCount < 3 ? "degraded" : "unhealthy";
+    const status: HealthcheckResponse["status"] =
+      errorCount === 0 ? "healthy" : errorCount < 3 ? "degraded" : "unhealthy";
 
-  const response: HealthcheckResponse = {
-    status,
-    timestamp: new Date().toISOString(),
-    services,
-  };
+    const response: HealthcheckResponse = {
+      status,
+      timestamp: new Date().toISOString(),
+      services,
+    };
 
-  return json(response);
+    return json(response);
+  } catch (e) {
+    return json(
+      {
+        status: "unhealthy",
+        timestamp: new Date().toISOString(),
+        error: e instanceof Error ? e.message : "Unknown error",
+        services: {
+          d1: { status: "error", latency: 0, error: "Platform not available" },
+          kv_sessions: { status: "error", latency: 0, error: "Platform not available" },
+          kv_flags: { status: "error", latency: 0, error: "Platform not available" },
+          r2: { status: "error", latency: 0, error: "Platform not available" },
+        },
+      },
+      { status: 503 }
+    );
+  }
 };
