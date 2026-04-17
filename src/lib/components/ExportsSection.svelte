@@ -1,8 +1,8 @@
 <script lang="ts">
-  import { PUBLIC_API_MOUNT_PATH } from '$env/static/public'
+  import { APP_PUBLIC_API_PATH } from '$env/static/public'
   import { onMount } from 'svelte'
 
-  const basePath = PUBLIC_API_MOUNT_PATH || ''
+  const basePath = APP_PUBLIC_API_PATH || ''
 
   interface Props {
     compact?: boolean
